@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+// set the browser tab's title
+<head>
+    <title>Salaries</title>
+</head>
+<body>
+    <h1>Salaries</h1>
+    <p>Below are 2025 Salaries</p>
+
+    <!-- This is your CSV table -->
+    <div id="table-container"></div>
+    <script src="script.js"></script>
+</body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Table Display</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+    <h1>2024 Salaries</h1>
+    <table id="csv-table" border="1">
+        <!-- Table content will be inserted here by JavaScript -->
+    </table>
+
+    <script>
+        // Load the CSV file and parse it
+        Papa.parse("2025 Salaries.csv", {
+            download: true, // download the file directly from the GitHub repo
+            complete: function(results) {
+                // Get the parsed CSV data
+                var data = results.data;
+
+                // Create table headers from the CSV header row
+                var table = document.getElementById('csv-table');
+                var header = table.createTHead();
+                var headerRow = header.insertRow(0);
+                for (var i = 0; i < data[0].length; i++) {
+                    var cell = headerRow.insertCell(i);
+                    cell.textContent = data[0][i]; // Set header name from first row of CSV
+                }
+
+                // Populate table rows with CSV data
+                var tbody = table.createTBody();
+                for (var i = 1; i < data.length; i++) {
+                    var row = tbody.insertRow();
+                    for (var j = 0; j < data[i].length; j++) {
+                        var cell = row.insertCell(j);
+                        cell.textContent = data[i][j];
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
