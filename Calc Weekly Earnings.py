@@ -1,21 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import numpy as np
 import pandas as pd
-
-# Use following code to show all rows or all columns
-#pd.set_option('display.max_rows', None)
-#pd.set_option('display.max_columns', None)
-# Reset the pandas defaults.  Here I'm doing this so I don't show every DF row and column 
-pd.reset_option('display')
-
-
-# In[12]:
-
 
 # read in pga earnings from ESPN.  Use df[1] when there is a playoff, else use df[0]
 # Set global variable on what tourney_nb we are working on
@@ -29,30 +13,15 @@ pga_results = df[1]
 pga_results['EARNINGS'] = pga_results['EARNINGS'].str.replace(r'[\$,]', '', regex=True)
 pga_results['EARNINGS'] = pd.to_numeric(pga_results['EARNINGS'], errors='coerce').fillna(0)
 #print(pga_results['EARNINGS'].dtype)
-pga_results
-
-
-# In[13]:
-
 
 # Rename golfers to so they merge correctly
 pga_results['PLAYER'] = np.where(pga_results['PLAYER']=='Ludvig Åberg','Ludvig Aberg', pga_results['PLAYER'])
 pga_results['PLAYER'] = np.where(pga_results['PLAYER']=='Séamus Power','Seamus Power', pga_results['PLAYER'])
 pga_results['PLAYER'] = np.where(pga_results['PLAYER']=='Nicolai Højgaard','Nicolai Hojgaard', pga_results['PLAYER'])
 pga_results['PLAYER'] = np.where(pga_results['PLAYER']=='Rasmus Højgaard','Rasmus Hojgaard', pga_results['PLAYER'])
-pga_results
-
-
-# In[14]:
-
 
 # Read in rosters
 rosters = pd.read_csv(r'C:\Users\tinar\Rosters.csv')
-rosters
-
-
-# In[15]:
-
 
 # Read in injuries
 injuries = pd.read_csv(r'C:\Users\tinar\Injuries.csv')
@@ -62,11 +31,6 @@ cur_injuries = injuries[injuries['Tourney_Nb'] == Global_Tourney_Nb]
 
 # Convert to a set for faster lookup
 cur_injuries_map = cur_injuries.set_index('Golfer')['Salary'].to_dict()
-cur_injuries_map
-
-
-# In[16]:
-
 
 # Identify injured golfers on each team
 for i in range(1, 11):  # For Golfer1 to Golfer10
@@ -77,11 +41,6 @@ for i in range(1, 11):  # For Golfer1 to Golfer10
 # For each team, find the maximum salary of all injured golfers
 rosters['Max_Injury_Salary'] = rosters[[f'Injury{i}' for i in range(1,11)]].max(axis=1)
 rosters_w_injuries = rosters[rosters['Max_Injury_Salary'] > 0]
-rosters_w_injuries
-
-
-# In[17]:
-
 
 # Read salaries
 salaries = pd.read_csv(r'C:\Users\tinar\Salaries.csv')
@@ -90,51 +49,24 @@ salaries = pd.read_csv(r'C:\Users\tinar\Salaries.csv')
 rosters = rosters.merge(salaries, how='left', left_on='Golfer0', right_on='Golfer')
 rosters.rename(columns={'Salary': 'Sub_Salary'}, inplace=True)
 rosters.drop(columns=['Golfer','Owners'], inplace=True)
-rosters
-
-
-# In[18]:
-
 
 # attach pga earnings to each golfer, including the injury sub (Golfer0)
 for i in range(0,11):
     golfer_col = f"Golfer{i}"
     earnings_col = f"Earnings{i}"
-#    rosters[earnings_col] = rosters[golfer_col].map(pga_results.set_index("PLAYER")["EARNINGS"])
-    rosters[earnings_col] = pd.to_numeric(
-        rosters[golfer_col].map(pga_results.set_index("PLAYER")["EARNINGS"]),
-        errors='coerce'
-    ).fillna(0)
-rosters
-
-
-# In[19]:
-
+    rosters[earnings_col] = rosters[golfer_col].map(pga_results.set_index("PLAYER")["EARNINGS"])
 
 # If the injury sub salary is highest salaried injured golf (Max_Injury_Salary) then don't count Golfer0 earnings
 # Note we also don't count Golfer0 earnings if no golfers on the team are injured, because Max_Injury_Salary = 0
 rosters.loc[rosters['Sub_Salary'] > rosters['Max_Injury_Salary'], 'Earnings0'] = 0
-#pd.set_option('display.max_rows', None)
-#pd.set_option('display.max_columns', None)
-#pd.reset_option('display')
-#rosters
 
 # Sum the earnings for the week
 rosters['Tourney_Nb'] = Global_Tourney_Nb
 rosters['Earn_Sum_Tourney'] = rosters[[f'Earnings{i}' for i in range(11)]].sum(axis=1)
 rosters['Earn_Sum_YTD'] = 0
-rosters
-
-
-# In[20]:
-
 
 #on the first week of the year, I need to do this (i.e., write out an initial CSV file)
 #rosters.to_csv('YTD_Earnings_Detail.csv', index=False)
-
-
-# In[23]:
-
 
 # read YTD Earnings Detail
 # Delete rows where 'Tourney_Nb' is equal to 'Global_Tourney_Nb'.  Do this in case I need to re-run a week
@@ -150,10 +82,6 @@ ytd_dets = ytd_dets.sort_values(by=['Team Name', 'Tourney_Nb'], ascending=[True,
 ytd_dets['Earn_Sum_YTD'] = ytd_dets.groupby('Team Name')['Earn_Sum_Tourney'].cumsum()
 ytd_dets.to_csv('YTD_Earnings_Detail.csv', index=False)
 
-
-# In[34]:
-
-
 golfer_names = [f'Golfer{i}' for i in range(0,11)]
 df_golfers = ytd_dets[['Tourney_Nb','Team Name'] + golfer_names]
 
@@ -167,39 +95,3 @@ df_ytd_dets = df_ytd_dets.rename(columns={'Golfer0': 'InjurySub'})
 df_ytd_dets = df_ytd_dets.fillna("")
 df_ytd_dets = df_ytd_dets.replace(0,"")
 df_ytd_dets.to_csv('YTD_Details_For_Web.csv', index=False)
-#df_ytd_dets
-
-
-# In[ ]:
-
-
-# Use a set to collect unique golfer names with no match
-# This is just a check to make sure I'm not missing salaries for any golfers
-missing_golfers = set()
-
-for i in range(0,11):
-    golfer_col = f"Golfer{i}"
-    salary_col = f"salary{i}"
-    rosters[salary_col] = rosters[golfer_col].map(salaries.set_index("Golfer")["Salary"])
-# Find unmatched golfers for the current column
-    unmatched = rosters.loc[rosters[salary_col].isna(), golfer_col]
-    missing_golfers.update(unmatched)  # Add unmatched golfers to the set
-
-# Convert set to list for easier display or further processing
-missing_golfers_list = list(missing_golfers)
-print("Golfers with no matching salary:")
-print(missing_golfers_list)
-
-
-# In[ ]:
-
-
-rosters['salary_sum'] = rosters[[f'salary{i}' for i in range(1,11)]].sum(axis=1)
-rosters
-
-
-# In[ ]:
-
-
-
-
