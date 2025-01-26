@@ -30,39 +30,33 @@ injuries
 
 # Filter down to just this week's injuries
 cur_injuries = injuries[injuries['Tourney_Nb'] == Global_Tourney_Nb]
-cur_injuries
+
 # Convert to a set for faster lookup
 cur_injuries_map = cur_injuries.set_index('Golfer')['Salary'].to_dict()
-cur_injuries_map
 
 # Identify injured golfers on each team
 for i in range(1, 11):  # For Golfer1 to Golfer10
     golfer_col = f'Golfer{i}'  # Column name for the golfer
     injury_col = f'Injury{i}'  # New column name for injury
     rosters[injury_col] = rosters[golfer_col].map(cur_injuries_map).fillna(0)
-rosters
 
 # For each team, find the maximum salary of all injured golfers
 rosters['Max_Injury_Salary'] = rosters[[f'Injury{i}' for i in range(1,11)]].max(axis=1)
 rosters_w_injuries = rosters[rosters['Max_Injury_Salary'] > 0]
-rosters_w_injuries
 
 # Read salaries
-salaries = pd.read_csv('2025_Salaries.csv')
-salaries
+salaries = pd.read_csv(r'C:\Users\tinar\Salaries.csv')
 
 # Join salaries onto the injury sub
 rosters = rosters.merge(salaries, how='left', left_on='Golfer0', right_on='Golfer')
 rosters.rename(columns={'Salary': 'Sub_Salary'}, inplace=True)
 rosters.drop(columns=['Golfer','Owners'], inplace=True)
-rosters
 
 # attach pga earnings to each golfer, including the injury sub (Golfer0)
 for i in range(0,11):
     golfer_col = f"Golfer{i}"
     earnings_col = f"Earnings{i}"
     rosters[earnings_col] = rosters[golfer_col].map(pga_results.set_index("PLAYER")["EARNINGS"])
-rosters
 
 # If the injury sub salary is highest salaried injured golf (Max_Injury_Salary) then don't count Golfer0 earnings
 # Note we also don't count Golfer0 earnings if no golfers on the team are injured, because Max_Injury_Salary = 0
@@ -72,7 +66,6 @@ rosters.loc[rosters['Sub_Salary'] > rosters['Max_Injury_Salary'], 'Earnings0'] =
 rosters['Tourney_Nb'] = Global_Tourney_Nb
 rosters['Earn_Sum_Tourney'] = rosters[[f'Earnings{i}' for i in range(11)]].sum(axis=1)
 rosters['Earn_Sum_YTD'] = 0
-print(rosters)
 
 #on the first week of the year, I need to do this (i.e., write out an initial CSV file)
 #rosters.to_csv('YTD_Earnings_Detail.csv', index=False)
