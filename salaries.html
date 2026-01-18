@@ -1,55 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
-<a href="index.html">Go back to the homepage</a>
-<head>
-    <title>Salaries</title>
-</head>
-<body>
-    <h1>Salaries</h1>
-    <p>Below are 2025 Salaries</p>
-
-    <!-- This is your CSV table -->
-    <div id="table-container"></div>
-    <script src="script.js"></script>
-</body>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Table Display</title>
+    <title>Salaries</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
-    <h1>2025 Salaries</h1>
-    <table id="csv-table" border="1">
-        <!-- Table content will be inserted here by JavaScript -->
-    </table>
+    <a href="index.html">Go back to the homepage</a>
+
+    <h1>Salaries</h1>
+    <p>Below are the 2026 salaries</p>
+
+    <!-- This is your CSV table -->
+    <div id="table-container">Loading salaries...</div>
 
     <script>
-        // Load the CSV file and parse it
-        Papa.parse("Salaries.csv", {
-            download: true, // download the file directly from the GitHub repo
+        Papa.parse("data/salaries/salaries_2026.csv", {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
             complete: function(results) {
-                // Get the parsed CSV data
-                var data = results.data;
+                const data = results.data;
 
-                // Create table headers from the CSV header row
-                var table = document.getElementById('csv-table');
-                var header = table.createTHead();
-                var headerRow = header.insertRow(0);
-                for (var i = 0; i < data[0].length; i++) {
-                    var cell = headerRow.insertCell(i);
-                    cell.textContent = data[0][i]; // Set header name from first row of CSV
-                }
+                let html = '<table border="1" cellpadding="5" cellspacing="0">';
+                html += '<thead><tr>';
 
-                // Populate table rows with CSV data
-                var tbody = table.createTBody();
-                for (var i = 1; i < data.length; i++) {
-                    var row = tbody.insertRow();
-                    for (var j = 0; j < data[i].length; j++) {
-                        var cell = row.insertCell(j);
-                        cell.textContent = data[i][j];
-                    }
-                }
+                // Headers
+                const headers = Object.keys(data[0]);
+                headers.forEach(h => html += `<th>${h}</th>`);
+                html += '</tr></thead>';
+
+                // Rows
+                html += '<tbody>';
+                data.forEach(row => {
+                    html += '<tr>';
+                    headers.forEach(h => {
+                        html += `<td>${row[h]}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+
+                document.getElementById("table-container").innerHTML = html;
             }
         });
     </script>
