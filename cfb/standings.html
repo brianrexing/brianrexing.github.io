@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFB Draft Standings</title>
+</head>
+<body>
+    <a href="index.html">Back to CFB home</a>
+
+    <h1>Standings</h1>
+    <p id="scoring-line">Loading…</p>
+    <p id="status"></p>
+
+    <h2>Manager standings</h2>
+    <div id="standings-container">Loading standings…</div>
+
+    <h2>Team detail</h2>
+    <div id="detail-container"></div>
+
+    <script src="cfb.js"></script>
+    <script>
+        async function main() {
+            const [picks, records, scoringCfg] = await Promise.all([
+                Cfb.loadCsv("../data/cfb/draft.csv"),
+                Cfb.loadCsv("../data/cfb/records.csv"),
+                fetch("../data/cfb/scoring.json").then((r) => r.json()),
+            ]);
+
+            const scoring = scoringCfg.scoring || {
+                points_per_win: 1,
+                points_per_tie: 0.5,
+            };
+            document.getElementById("scoring-line").textContent =
+                `${scoringCfg.league_name || "League"} ${scoringCfg.season || ""} — ` +
+                `${scoring.points_per_win} pt/win, ${scoring.points_per_tie} pt/tie`;
+
+            const index = Cfb.buildTeamIndex(records);
+            const enriched = picks.map((p) => {
+                const rec = Cfb.matchTeam(p.team, index);
+                const scored = Cfb.scorePick(rec, scoring);
+                return {
+                    ...p,
+                    matched_team: rec ? rec.display_name || rec.team : "",
+                    ...scored,
+                    unmatched: !rec,
+                };
+            });
+
+            const unmatched = enriched.filter((p) => p.unmatched);
+            document.getElementById("status").textContent = unmatched.length
+                ? `Warning: ${unmatched.length} pick(s) did not match ESPN records: ` +
+                  unmatched.map((p) => p.team).join(", ")
+                : `Matched all ${enriched.length} drafted teams to ESPN records.`;
+
+            const byOwner = {};
+            enriched.forEach((p) => {
+                if (!byOwner[p.owner]) {
+                    byOwner[p.owner] = {
+                        owner: p.owner,
+                        points: 0,
+                        wins: 0,
+                        losses: 0,
+                        ties: 0,
+                        teams: 0,
+                    };
+                }
+                const row = byOwner[p.owner];
+                row.points += p.points;
+                row.wins += p.wins;
+                row.losses += p.losses;
+                row.ties += p.ties;
+                row.teams += 1;
+            });
+
+            const standings = Object.values(byOwner).sort(
+                (a, b) => b.points - a.points || b.wins - a.wins || a.owner.localeCompare(b.owner)
+            );
+
+            let html = '<table border="1" cellpadding="5" cellspacing="0">';
+            html += "<thead><tr><th>Rank</th><th>Owner</th><th>Points</th><th>Team W-L-T</th><th>Teams</th></tr></thead><tbody>";
+            standings.forEach((row, idx) => {
+                const record = `${row.wins}-${row.losses}` + (row.ties ? `-${row.ties}` : "");
+                html += `<tr>
+                    <td>${idx + 1}</td>
+                    <td>${row.owner}</td>
+                    <td>${row.points}</td>
+                    <td>${record}</td>
+                    <td>${row.teams}</td>
+                </tr>`;
+            });
+            html += "</tbody></table>";
+            document.getElementById("standings-container").innerHTML = html;
+
+            enriched.sort((a, b) => Number(a.pick) - Number(b.pick));
+            let detail = '<table border="1" cellpadding="5" cellspacing="0">';
+            detail += "<thead><tr><th>Pick</th><th>Owner</th><th>Drafted</th><th>Matched</th><th>Record</th><th>Points</th></tr></thead><tbody>";
+            enriched.forEach((p) => {
+                detail += `<tr>
+                    <td>${p.pick}</td>
+                    <td>${p.owner}</td>
+                    <td>${p.team}</td>
+                    <td>${p.matched_team || "—"}</td>
+                    <td>${p.record}</td>
+                    <td>${p.points}</td>
+                </tr>`;
+            });
+            detail += "</tbody></table>";
+            document.getElementById("detail-container").innerHTML = detail;
+        }
+
+        main().catch((err) => {
+            document.getElementById("standings-container").textContent = err.message;
+        });
+    </script>
+</body>
+</html>

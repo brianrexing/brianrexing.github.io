@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFB Draft Board</title>
+</head>
+<body>
+    <a href="index.html">Back to CFB home</a>
+
+    <h1>Draft Board</h1>
+    <p>Who drafted which college football teams (from <code>data/cfb/draft.csv</code>).</p>
+    <p id="status">Loading draft…</p>
+    <div id="by-owner"></div>
+    <h2>Full draft order</h2>
+    <div id="table-container"></div>
+
+    <script src="cfb.js"></script>
+    <script>
+        async function main() {
+            const picks = await Cfb.loadCsv("../data/cfb/draft.csv");
+            picks.sort((a, b) => Number(a.pick) - Number(b.pick));
+            const owners = [...new Set(picks.map((p) => p.owner))];
+            document.getElementById("status").textContent =
+                `${picks.length} picks · ${owners.length} managers`;
+
+            let ownerHtml = "";
+            owners.forEach((owner) => {
+                const teams = picks.filter((p) => p.owner === owner);
+                ownerHtml += `<h3>${owner}</h3><ul>`;
+                teams.forEach((p) => {
+                    ownerHtml += `<li>#${p.pick} ${p.team}</li>`;
+                });
+                ownerHtml += "</ul>";
+            });
+            document.getElementById("by-owner").innerHTML = ownerHtml;
+
+            let html = '<table border="1" cellpadding="5" cellspacing="0">';
+            html += "<thead><tr><th>Pick</th><th>Round</th><th>Owner</th><th>Team</th></tr></thead><tbody>";
+            picks.forEach((p) => {
+                html += `<tr>
+                    <td>${p.pick}</td>
+                    <td>${p.round}</td>
+                    <td>${p.owner}</td>
+                    <td>${p.team}</td>
+                </tr>`;
+            });
+            html += "</tbody></table>";
+            document.getElementById("table-container").innerHTML = html;
+        }
+
+        main().catch((err) => {
+            document.getElementById("status").textContent = err.message;
+        });
+    </script>
+</body>
+</html>

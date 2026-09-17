@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFB Team Draft</title>
+</head>
+<body>
+    <a href="../index.html">Go back to the homepage</a>
+
+    <h1>College Football Team Draft</h1>
+    <p>
+        Track your WhatsApp draft: import the chat, record who got which teams,
+        and score the contest from live win-loss records.
+    </p>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">CFB Home</a></li>
+            <li><a href="import.html">Import WhatsApp Draft</a></li>
+            <li><a href="draft.html">Draft Board</a></li>
+            <li><a href="standings.html">Standings</a></li>
+        </ul>
+    </nav>
+
+    <h2>How it works</h2>
+    <ol>
+        <li>
+            In WhatsApp, open the draft group → ⋮ or group info →
+            <strong>Export chat</strong> → <strong>Without media</strong>.
+            Save the <code>.txt</code> file.
+        </li>
+        <li>
+            Go to <a href="import.html">Import WhatsApp Draft</a>, paste the
+            export (or upload the file), review the picks, and download
+            <code>draft.csv</code>.
+        </li>
+        <li>
+            Replace <code>data/cfb/draft.csv</code> in this repo with your file
+            (or edit that CSV by hand if the parser misses a pick).
+        </li>
+        <li>
+            Refresh team records periodically:
+            <pre>python3 tools/update_cfb_records.py --season 2026</pre>
+        </li>
+        <li>
+            Check <a href="standings.html">Standings</a> — default scoring is
+            <strong>1 point per win</strong> (0.5 per tie).
+        </li>
+    </ol>
+
+    <h2>Scoring</h2>
+    <p id="scoring-notes">Loading scoring rules…</p>
+
+    <p>
+        Sample draft data is loaded so you can see the pages before importing
+        your real chat. Swap in your WhatsApp export when ready.
+    </p>
+
+    <script>
+        fetch("../data/cfb/scoring.json")
+            .then((r) => r.json())
+            .then((cfg) => {
+                const s = cfg.scoring || {};
+                document.getElementById("scoring-notes").textContent =
+                    `${cfg.league_name || "League"} (${cfg.season}): ` +
+                    `${s.points_per_win} point(s) per win, ` +
+                    `${s.points_per_tie} per tie. ` +
+                    (s.notes || "");
+            })
+            .catch(() => {
+                document.getElementById("scoring-notes").textContent =
+                    "Could not load data/cfb/scoring.json";
+            });
+    </script>
+</body>
+</html>

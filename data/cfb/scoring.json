@@ -1,0 +1,9 @@
+{
+  "season": 2026,
+  "league_name": "College Football Team Draft",
+  "scoring": {
+    "points_per_win": 1,
+    "points_per_tie": 0.5,
+    "notes": "Default scoring: each drafted team earns 1 point per win (0.5 per tie). Edit this file if your group uses different rules."
+  }
+}

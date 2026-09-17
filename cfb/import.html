@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import WhatsApp Draft</title>
+</head>
+<body>
+    <a href="index.html">Back to CFB home</a>
+
+    <h1>Import WhatsApp Draft</h1>
+    <p>
+        Paste a WhatsApp chat export below, or choose the exported
+        <code>.txt</code> file. Messages like
+        <code>Brian: 1. Ohio State</code> or <code>Mike: Georgia</code> become picks.
+    </p>
+
+    <p>
+        <label>
+            Upload export:
+            <input type="file" id="file-input" accept=".txt,text/plain">
+        </label>
+    </p>
+
+    <textarea id="chat-text" rows="16" cols="80" placeholder="Paste WhatsApp export here..."></textarea>
+    <p>
+        <button type="button" id="parse-btn">Parse draft</button>
+        <button type="button" id="download-btn" disabled>Download draft.csv</button>
+        <button type="button" id="load-sample-btn">Load sample chat</button>
+    </p>
+
+    <p id="status">Paste a chat export to begin.</p>
+    <div id="table-container"></div>
+
+    <h2>After download</h2>
+    <ol>
+        <li>Save the file as <code>data/cfb/draft.csv</code> in the repo.</li>
+        <li>Commit and push (or open a PR) so GitHub Pages can serve it.</li>
+        <li>Open <a href="draft.html">Draft Board</a> and <a href="standings.html">Standings</a>.</li>
+    </ol>
+    <p>
+        Prefer the command line?
+        <code>python3 tools/parse_whatsapp_draft.py path/to/chat.txt -o data/cfb/draft.csv</code>
+    </p>
+
+    <script src="cfb.js"></script>
+    <script src="whatsapp_parse.js"></script>
+    <script>
+        let currentPicks = [];
+
+        async function knownTeams() {
+            try {
+                const records = await Cfb.loadCsv("../data/cfb/records.csv");
+                const names = [];
+                records.forEach((r) => {
+                    ["team", "display_name", "location", "abbreviation"].forEach((k) => {
+                        if (r[k]) names.push(r[k]);
+                    });
+                });
+                return names;
+            } catch (err) {
+                return [];
+            }
+        }
+
+        function renderPicks(picks) {
+            currentPicks = picks;
+            const status = document.getElementById("status");
+            const container = document.getElementById("table-container");
+            const downloadBtn = document.getElementById("download-btn");
+
+            if (!picks.length) {
+                status.textContent = "No draft picks found. Try numbered picks like \"1. Ohio State\".";
+                container.innerHTML = "";
+                downloadBtn.disabled = true;
+                return;
+            }
+
+            const owners = [...new Set(picks.map((p) => p.owner))];
+            status.textContent = `Found ${picks.length} picks across ${owners.length} owners.`;
+            downloadBtn.disabled = false;
+
+            let html = '<table border="1" cellpadding="5" cellspacing="0">';
+            html += "<thead><tr><th>Pick</th><th>Round</th><th>Owner</th><th>Team</th><th>Raw message</th></tr></thead><tbody>";
+            picks.forEach((p) => {
+                html += `<tr>
+                    <td>${p.pick}</td>
+                    <td>${p.round}</td>
+                    <td>${p.owner}</td>
+                    <td>${p.team}</td>
+                    <td>${p.raw_message}</td>
+                </tr>`;
+            });
+            html += "</tbody></table>";
+            container.innerHTML = html;
+        }
+
+        async function runParse() {
+            const text = document.getElementById("chat-text").value;
+            const teams = await knownTeams();
+            renderPicks(WhatsAppDraft.extractPicks(text, teams));
+        }
+
+        document.getElementById("parse-btn").addEventListener("click", runParse);
+        document.getElementById("download-btn").addEventListener("click", () => {
+            Cfb.downloadText("draft.csv", Cfb.toDraftCsv(currentPicks));
+        });
+        document.getElementById("file-input").addEventListener("change", async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            document.getElementById("chat-text").value = await file.text();
+            runParse();
+        });
+        document.getElementById("load-sample-btn").addEventListener("click", async () => {
+            const res = await fetch("../data/cfb/sample_whatsapp_export.txt");
+            document.getElementById("chat-text").value = await res.text();
+            runParse();
+        });
+    </script>
+</body>
+</html>

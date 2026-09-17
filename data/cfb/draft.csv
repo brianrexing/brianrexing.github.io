@@ -1,0 +1,17 @@
+pick,round,owner,team,raw_message
+1,1,Brian,Ohio State,1. Ohio State
+2,1,Mike,Georgia,2. Georgia
+3,1,Sarah,Texas,3. Texas
+4,1,Alex,Penn State,4. Penn State
+5,2,Alex,Oregon,5. Oregon
+6,2,Sarah,Notre Dame,6. Notre Dame
+7,2,Mike,Alabama,7. Alabama
+8,2,Brian,LSU,8. LSU
+9,3,Brian,Miami,9. Miami
+10,3,Mike,Ole Miss,10. Ole Miss
+11,3,Sarah,Texas A&M,11. Texas A&M
+12,3,Alex,Michigan,12. Michigan
+13,4,Alex,Indiana,13. Indiana
+14,4,Sarah,South Florida,14. South Florida
+15,4,Mike,Iowa State,15. Iowa State
+16,4,Brian,Tennessee,16. Tennessee
